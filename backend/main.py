@@ -52,9 +52,14 @@ def on_file_change(file_path):
 
 @app.on_event("startup")
 async def startup_event():
-    # Start the file watcher in a separate thread
-    watch_dir = os.path.join(os.getcwd(), "..") # Watch the parent dir (project root)
-    watcher = FileWatcher(watch_dir, on_file_change)
+    # Use absolute path to ensure we are watching the right place
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(backend_dir)
+    
+    print(f"DEBUG: Backend Dir: {backend_dir}")
+    print(f"DEBUG: Project Root (Watching): {project_root}")
+    
+    watcher = FileWatcher(project_root, on_file_change)
     thread = threading.Thread(target=watcher.start, daemon=True)
     thread.start()
     print("File watcher started on startup.")

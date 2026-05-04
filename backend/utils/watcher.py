@@ -14,6 +14,10 @@ class CodeChangeHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if not event.is_directory and event.src_path.endswith(('.py', '.js')):
+            # Ignore node_modules, venv, and .git
+            if any(x in event.src_path for x in ['node_modules', 'venv', '.git']):
+                return
+            
             logging.info(f"Detected change in: {event.src_path}")
             self.callback(event.src_path)
 

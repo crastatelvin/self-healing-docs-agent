@@ -31,7 +31,15 @@ llm = ChatOpenAI(
 def analyzer_node(state: AgentState):
     print("---ANALYZING CODE---")
     code = state["changed_code"]
-    prompt = f"Analyze the following code and describe its logical intent in one sentence:\n\n{code}"
+    prompt = f"""You are a senior code analyzer.
+Analyze the logical intent of the following code snippet. 
+Respond with ONLY one sentence describing what this code does.
+
+CODE TO ANALYZE:
+---
+{code}
+---
+"""
     response = llm.invoke([HumanMessage(content=prompt)])
     return {"code_intent": response.content, "status": "analyzed"}
 
@@ -48,7 +56,20 @@ def detector_node(state: AgentState):
     print("---DETECTING CONTRADICTIONS---")
     code = state["changed_code"]
     docs = "\n".join(state["retrieved_docs"])
-    prompt = f"Compare this code with the documentation. Identify any contradictions:\nCode:\n{code}\n\nDocs:\n{docs}"
+    prompt = f"""Compare the NEW CODE below with the EXISTING DOCUMENTATION.
+Identify any contradictions or missing information.
+
+NEW CODE:
+---
+{code}
+---
+
+EXISTING DOCUMENTATION:
+---
+{docs}
+---
+
+List the contradictions clearly:"""
     response = llm.invoke([HumanMessage(content=prompt)])
     return {"contradictions": response.content, "status": "detected"}
 
@@ -56,6 +77,17 @@ def patcher_node(state: AgentState):
     print("---GENERATING PATCH---")
     contradictions = state["contradictions"]
     docs = "\n".join(state["retrieved_docs"])
-    prompt = f"Based on these contradictions: {contradictions}\nUpdate the following documentation to match the new code logic:\n\n{docs}"
+    prompt = f"""Based on the following contradictions, update the documentation to perfectly match the new code logic.
+DO NOT include any conversational text like "Certainly" or "Here is the patch". 
+ONLY output the updated markdown documentation.
+
+CONTRADICTIONS FOUND:
+{contradictions}
+
+CURRENT DOCUMENTATION:
+{docs}
+
+NEW DOCUMENTATION:
+"""
     response = llm.invoke([HumanMessage(content=prompt)])
     return {"generated_patch": response.content, "status": "patched"}

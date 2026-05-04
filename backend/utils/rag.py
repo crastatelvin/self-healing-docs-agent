@@ -21,12 +21,13 @@ class RAGManager:
             ids=ids
         )
 
-    def query_docs(self, query_text: str, n_results: int = 3):
+    def query_docs(self, query: str, n_results: int = 1):
         results = self.collection.query(
-            query_texts=[query_text],
+            query_texts=[query],
             n_results=n_results
         )
-        return results['documents'][0]
+        # Return both content and file source
+        return [{"content": doc, "source": meta["source"]} for doc, meta in zip(results['documents'][0], results['metadatas'][0])]
 
 if __name__ == "__main__":
     # Test run

@@ -22,7 +22,9 @@ analysis_results = []
 graph = create_graph()
 
 class PatchApproval(BaseModel):
-    file_path: str
+    file_path: str # The code file path
+    doc_source: str # The doc file path
+    patch_content: str
     approved: bool
 
 def on_file_change(file_path):
@@ -70,11 +72,34 @@ async def get_results():
 
 @app.post("/approve")
 async def approve_patch(approval: PatchApproval):
-    # In a real scenario, this would write the patch to the .md file
     if approval.approved:
-        # Logic to apply patch would go here
-        return {"status": "Patch applied successfully"}
-    return {"status": "Patch rejected"}
+        try:
+            # 1. Update the actual documentation file
+            doc_path = approval.doc_source
+            if not os.path.isabs(doc_path):
+                # Resolve relative path if needed
+                doc_path = os.path.abspath(os.path.join(os.getcwd(), "..", doc_path))
+            
+            with open(doc_path, 'w') as f:
+                f.write(approval.patch_content)
+            
+            # 2. Update the CHANGELOG.md
+            changelog_path = os.path.abspath(os.path.join(os.getcwd(), "..", "docs", "CHANGELOG.md"))
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            log_entry = f"\n## [{timestamp}] Sync: {os.path.basename(approval.file_path)}\n"
+            log_entry += f"- **Target:** {os.path.basename(doc_path)}\n"
+            log_entry += f"- **Status:** Automatically healed and human-approved.\n"
+            
+            with open(changelog_path, 'a') as f:
+                f.write(log_entry)
+                
+            return {"status": "success", "message": f"Updated {os.path.basename(doc_path)} and logged to changelog."}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+            
+    return {"status": "ignored", "message": "Patch was rejected by user."}
 
 if __name__ == "__main__":
     import uvicorn

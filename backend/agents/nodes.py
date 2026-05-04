@@ -15,7 +15,7 @@ class AgentState(TypedDict):
     changed_code: str
     old_code: str
     code_intent: str
-    retrieved_docs: List[str]
+    retrieved_docs: List[dict] # List of {"content": "...", "source": "..."}
     contradictions: str
     generated_patch: str
     status: str
@@ -47,15 +47,15 @@ def retriever_node(state: AgentState):
     print("---RETRIEVING DOCS---")
     intent = state["code_intent"]
     # Query actual docs from ChromaDB
-    docs = rag_manager.query_docs(intent, n_results=2)
+    docs = rag_manager.query_docs(intent, n_results=1)
     if not docs:
-        docs = [f"No documentation found for: {intent}"]
+        docs = [{"content": f"No documentation found for: {intent}", "source": "unknown"}]
     return {"retrieved_docs": docs, "status": "retrieved"}
 
 def detector_node(state: AgentState):
     print("---DETECTING CONTRADICTIONS---")
     code = state["changed_code"]
-    docs = "\n".join(state["retrieved_docs"])
+    docs = "\n".join([d["content"] for d in state["retrieved_docs"]])
     prompt = f"""Compare the NEW CODE below with the EXISTING DOCUMENTATION.
 Identify any contradictions or missing information.
 
@@ -76,7 +76,7 @@ List the contradictions clearly:"""
 def patcher_node(state: AgentState):
     print("---GENERATING PATCH---")
     contradictions = state["contradictions"]
-    docs = "\n".join(state["retrieved_docs"])
+    docs = "\n".join([d["content"] for d in state["retrieved_docs"]])
     prompt = f"""Based on the following contradictions, update the documentation to perfectly match the new code logic.
 DO NOT include any conversational text like "Certainly" or "Here is the patch". 
 ONLY output the updated markdown documentation.

@@ -22,15 +22,24 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleApprove = async (filePath, approved) => {
+  const handleApprove = async (result) => {
     try {
-      await axios.post('http://localhost:8000/approve', {
-        file_path: filePath,
-        approved: approved
+      const response = await fetch('http://localhost:8000/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_path: result.file_path,
+          doc_source: result.retrieved_docs[0].source,
+          patch_content: result.generated_patch,
+          approved: true
+        }),
       });
-      fetchResults();
+      const data = await response.json();
+      if (data.status === 'success') {
+        alert(data.message);
+      }
     } catch (error) {
-      console.error("Error approving patch", error);
+      console.error('Approval failed:', error);
     }
   };
 

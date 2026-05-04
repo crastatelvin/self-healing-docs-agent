@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+.eslintcache
+
+# Local Models
+*.gguf
+*.bin
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+chroma_db/

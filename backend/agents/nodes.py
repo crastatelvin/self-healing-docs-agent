@@ -1,0 +1,61 @@
+import os
+from typing import TypedDict, List
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from dotenv import load_dotenv
+from utils.rag import RAGManager
+
+load_dotenv()
+
+# Initialize RAG
+rag_manager = RAGManager()
+
+class AgentState(TypedDict):
+    file_path: str
+    changed_code: str
+    old_code: str
+    code_intent: str
+    retrieved_docs: List[str]
+    contradictions: str
+    generated_patch: str
+    status: str
+
+# Initialize the LLM (Local llama.cpp server)
+# Ensure llama.cpp server is running on port 8080
+llm = ChatOpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="not-needed", # Local server usually doesn't require a key
+    model="qwen"
+)
+
+def analyzer_node(state: AgentState):
+    print("---ANALYZING CODE---")
+    code = state["changed_code"]
+    prompt = f"Analyze the following code and describe its logical intent in one sentence:\n\n{code}"
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return {"code_intent": response.content, "status": "analyzed"}
+
+def retriever_node(state: AgentState):
+    print("---RETRIEVING DOCS---")
+    intent = state["code_intent"]
+    # Query actual docs from ChromaDB
+    docs = rag_manager.query_docs(intent, n_results=2)
+    if not docs:
+        docs = [f"No documentation found for: {intent}"]
+    return {"retrieved_docs": docs, "status": "retrieved"}
+
+def detector_node(state: AgentState):
+    print("---DETECTING CONTRADICTIONS---")
+    code = state["changed_code"]
+    docs = "\n".join(state["retrieved_docs"])
+    prompt = f"Compare this code with the documentation. Identify any contradictions:\nCode:\n{code}\n\nDocs:\n{docs}"
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return {"contradictions": response.content, "status": "detected"}
+
+def patcher_node(state: AgentState):
+    print("---GENERATING PATCH---")
+    contradictions = state["contradictions"]
+    docs = "\n".join(state["retrieved_docs"])
+    prompt = f"Based on these contradictions: {contradictions}\nUpdate the following documentation to match the new code logic:\n\n{docs}"
+    response = llm.invoke([HumanMessage(content=prompt)])
+    return {"generated_patch": response.content, "status": "patched"}

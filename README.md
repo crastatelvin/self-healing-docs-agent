@@ -59,14 +59,14 @@ When a developer saves a `.py` or `.js` file:
 ### 1) Main Dashboard
 *Real-time analysis log showing agents traversing the LangGraph.*
 
-![Dashboard](https://github.com/crastatelvin/self-healing-docs-agent/raw/master/frontend/src/assets/hero.png)
+![Dashboard](docs/screenshots/dashboard.png)
 
 <br/>
 
 ### 2) The Healing Process
 *Side-by-side diff viewer showing the AI-proposed documentation fix.*
 
-![Diff Viewer](https://github.com/crastatelvin/self-healing-docs-agent/raw/master/docs/screenshots/patch-preview.png)
+![Diff Viewer](docs/screenshots/patch_preview.png)
 
 </div>
 

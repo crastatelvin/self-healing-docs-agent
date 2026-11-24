@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/images/synchron-logo.png" alt="SYNCHRON logo" width="180"/>
+
 # 🔄 SYNCHRON
 
 ### Autonomous Code-to-Doc Synchronization — Multi-Agent Documentation Intelligence with Local LLM
